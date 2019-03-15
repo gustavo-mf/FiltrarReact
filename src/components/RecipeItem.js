@@ -1,28 +1,51 @@
 import React, { Component } from 'react';
 import reactStringReplace from 'react-string-replace';
+import api from '../services/api';
 
-class RecipeItem extends Component{
-  render() {
-    const { recipe } = this.props;
-    if(typeof recipe === 'undefined') {
+class RecipeItem extends Component {
+  constructor(props) {
+    super(props);
+
+    this.state = {
+      pokemon: {}
+    };
+  }
+  async componentWillMount() {
+    const { poke } = this.props;
+    let pokemon;
+    if(typeof poke === 'undefined') {
       return null;
     }
+    await api.get('pokemon/'+poke.name).then(function (res) {
+      // handle success
+      if(res.request.status === 200) {
+        pokemon = res.data;
+      }
+    }).catch(function (error) {
+      // handle error
+      console.log(error);
+    });
+    this.setState({ pokemon });
+  }
+  render() {    
     const term = (this.props.searchString !== ''?this.props.searchString:null);
-    const title = reactStringReplace(recipe.title, term, (match, i) => (
-      <mark key={i}>{term}</mark>
-    ));
-    const ingredients = reactStringReplace(recipe.ingredients, term, (match, i) => (
-      <mark key={i}>{match}</mark>
-    ));
+    let sprite = '', name = '';
+
+    if (typeof this.state.pokemon.name !== 'undefined') {
+      name = reactStringReplace(this.state.pokemon.name, term, (match, i) => (
+        <mark key={i}>{term}</mark>
+      ));
+    }
+
+    if (typeof this.state.pokemon.sprites !== 'undefined')
+      sprite = this.state.pokemon.sprites.front_default;
+
     return (
       <div className="col-sm-3 mt-4">
-        <div className="card" onClick={()=> window.open(recipe.href, "_blank")}>
-          <img className="card-img-top img-fluid" src={recipe.thumbnail} alt="" />
+        <div className="card" >
+          <img className="card-img-top img-fluid" src={sprite} alt="Front" />
           <div className="card-body">
-            <h5 className="card-title">{title}</h5>
-            <p className="card-text">
-              <strong>Ingredients: </strong>{ingredients}
-            </p>
+            <h5 className="card-title">{name}</h5>
           </div>
         </div>
       </div>
